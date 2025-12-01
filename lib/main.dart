@@ -2,7 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-void main() {
+// 🔹 Firebase Core
+import 'package:firebase_core/firebase_core.dart';
+
+Future<void> main() async {
+  // Necesario para usar código async antes de runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Intentar inicializar Firebase (si no hay proyecto configurado,
+  // simplemente seguirá la app igualmente).
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Error al inicializar Firebase (modo demo): $e');
+  }
+
   runApp(const CatalogoPeliculasApp());
 }
 
@@ -403,5 +417,3 @@ class MovieCard extends StatelessWidget {
     );
   }
 }
-
-
