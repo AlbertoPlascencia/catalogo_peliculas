@@ -1,22 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
-// 🔹 Firebase Core
-import 'package:firebase_core/firebase_core.dart';
-
-Future<void> main() async {
-  // Necesario para usar código async antes de runApp
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Intentar inicializar Firebase (si no hay proyecto configurado,
-  // simplemente seguirá la app igualmente).
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('Error al inicializar Firebase (modo demo): $e');
-  }
-
+void main() {
   runApp(const CatalogoPeliculasApp());
 }
 
@@ -33,9 +17,79 @@ class CatalogoPeliculasApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomeScreen(),
+      routes: {
+        '/catalogo': (_) => const CatalogScreen(),
+        '/admin': (_) => const AdminScreen(),
+      },
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// MODELO Y DATOS
+// ---------------------------------------------------------------------------
+
+class Movie {
+  String title;
+  String year;
+  String director;
+  String genre;
+  String synopsis;
+  String imageUrl; // para este PI usamos un contenedor, pero dejamos el campo
+
+  Movie({
+    required this.title,
+    required this.year,
+    required this.director,
+    required this.genre,
+    required this.synopsis,
+    required this.imageUrl,
+  });
+}
+
+// lista global para que también la use la pantalla de administración
+List<Movie> movies = [
+  Movie(
+    title: 'Inception',
+    year: '2010',
+    director: 'Christopher Nolan',
+    genre: 'Ciencia ficción',
+    synopsis:
+    'Un ladrón que roba secretos a través de los sueños recibe la misión de implantar una idea en la mente de un objetivo.',
+    imageUrl: '',
+  ),
+  Movie(
+    title: 'Interstellar',
+    year: '2014',
+    director: 'Christopher Nolan',
+    genre: 'Ciencia ficción / Drama',
+    synopsis:
+    'Un grupo de exploradores viaja a través de un agujero de gusano en el espacio en busca de un nuevo hogar para la humanidad.',
+    imageUrl: '',
+  ),
+  Movie(
+    title: 'The Dark Knight',
+    year: '2008',
+    director: 'Christopher Nolan',
+    genre: 'Acción / Crimen',
+    synopsis:
+    'Batman se enfrenta al Joker, un criminal caótico que quiere sumir a Ciudad Gótica en la anarquía.',
+    imageUrl: '',
+  ),
+  Movie(
+    title: 'Whiplash',
+    year: '2014',
+    director: 'Damien Chazelle',
+    genre: 'Drama / Música',
+    synopsis:
+    'Un joven baterista de jazz es llevado al límite por su exigente y agresivo profesor.',
+    imageUrl: '',
+  ),
+];
+
+// ---------------------------------------------------------------------------
+// PANTALLA DE INICIO (bienvenida + registro / login)
+// ---------------------------------------------------------------------------
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -55,21 +109,53 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           const _HeroSection(),
-          const SizedBox(height: 16),
-
-          // LISTA DE PELÍCULAS
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ...movies.map((m) => MovieCard(movie: m)),
-
-                const SizedBox(height: 20),
-
-                // ---------------------------
-                // SECCIÓN NUEVA: PETICIÓN HTTP
-                // ---------------------------
-                const _PokemonSection(),
+                const Text(
+                  'Bienvenido',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Puedes registrarte como usuario nuevo o ingresar para ver el catálogo de películas.',
+                  style: TextStyle(color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    // solo decorativo para el PI
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Registro simulado (solo interfaz).'),
+                      ),
+                    );
+                  },
+                  child: const Text('Registrarme'),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/catalogo');
+                  },
+                  child: const Text('Ingresar'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/admin');
+                  },
+                  child: const Text('Administración'),
+                ),
               ],
             ),
           ),
@@ -79,57 +165,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class Movie {
-  final String title;
-  final String genre;
-  final String year;
-  final double rating;
-  final String duration;
-
-  Movie({
-    required this.title,
-    required this.genre,
-    required this.year,
-    required this.rating,
-    required this.duration,
-  });
-}
-
-final List<Movie> movies = [
-  Movie(
-    title: 'Inception',
-    genre: 'Ciencia ficción',
-    year: '2010',
-    rating: 8.8,
-    duration: '2h 28m',
-  ),
-  Movie(
-    title: 'Interstellar',
-    genre: 'Ciencia ficción / Drama',
-    year: '2014',
-    rating: 8.6,
-    duration: '2h 49m',
-  ),
-  Movie(
-    title: 'The Dark Knight',
-    genre: 'Acción / Crimen',
-    year: '2008',
-    rating: 9.0,
-    duration: '2h 32m',
-  ),
-  Movie(
-    title: 'Whiplash',
-    genre: 'Drama / Música',
-    year: '2014',
-    rating: 8.5,
-    duration: '1h 47m',
-  ),
-];
-
-// ---------------------------------------------------------------------
-// HERO CON IMAGEN DE FONDO
-// ---------------------------------------------------------------------
-
+// Hero con la imagen de fondo que ya tienes configurada
 class _HeroSection extends StatelessWidget {
   const _HeroSection();
 
@@ -235,183 +271,369 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------
-// NUEVA SECCIÓN – PETICIÓN HTTP A POKEAPI
-// ---------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// PANTALLA DE CATÁLOGO (lista de películas)
+// ---------------------------------------------------------------------------
 
-class _PokemonSection extends StatelessWidget {
-  const _PokemonSection({super.key});
-
-  Future<String> fetchPokemon() async {
-    final url = Uri.parse('https://pokeapi.co/api/v2/pokemon/1');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['name'];
-    } else {
-      return 'Error al obtener datos';
-    }
-  }
+class CatalogScreen extends StatelessWidget {
+  const CatalogScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: fetchPokemon(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0f1115),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF151821),
+        title: const Text(
+          'Catálogo de películas',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: movies.length,
+        itemBuilder: (context, index) {
+          final movie = movies[index];
+          return MovieCard(
+            movie: movie,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MovieDetailScreen(movie: movie),
+                ),
+              );
+            },
           );
-        }
-
-        if (!snapshot.hasData) {
-          return const Text(
-            'No se pudo cargar el Pokémon',
-            style: TextStyle(color: Colors.white),
-          );
-        }
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF181b24),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            'Pokémon desde API: ${snapshot.data!.toUpperCase()}',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }
 
-// ---------------------------------------------------------------------
-// CARD DE PELÍCULA
-// ---------------------------------------------------------------------
-
+// Card reutilizable (título + “imagen de referencia”)
 class MovieCard extends StatelessWidget {
   final Movie movie;
+  final VoidCallback? onTap;
 
-  const MovieCard({super.key, required this.movie});
+  const MovieCard({super.key, required this.movie, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF181b24),
-        borderRadius: BorderRadius.circular(16),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF181b24),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // “Imagen” genérica
+              Container(
+                width: 70,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade800,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.movie,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      movie.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      movie.genre,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Año: ${movie.year}',
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PANTALLA DE DESCRIPCIÓN (detalle de película)
+// ---------------------------------------------------------------------------
+
+class MovieDetailScreen extends StatelessWidget {
+  final Movie movie;
+
+  const MovieDetailScreen({super.key, required this.movie});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0f1115),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF151821),
+        title: Text(
+          movie.title,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                Container(
-                  width: 70,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade800,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                Positioned(
-                  bottom: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade700,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          size: 14,
-                          color: Colors.black,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          movie.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            // Imagen grande
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade800,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.movie,
+                color: Colors.white,
+                size: 64,
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            const SizedBox(height: 16),
+            Text(
+              movie.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DetailRow(label: 'Año', value: movie.year),
+            _DetailRow(label: 'Director', value: movie.director),
+            _DetailRow(label: 'Género', value: movie.genre),
+            const SizedBox(height: 12),
+            const Text(
+              'Sinopsis',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              movie.synopsis,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PANTALLA DE ADMINISTRACIÓN (alta / baja de películas)
+// ---------------------------------------------------------------------------
+
+class AdminScreen extends StatefulWidget {
+  const AdminScreen({super.key});
+
+  @override
+  State<AdminScreen> createState() => _AdminScreenState();
+}
+
+class _AdminScreenState extends State<AdminScreen> {
+  final _titleCtrl = TextEditingController();
+  final _yearCtrl = TextEditingController();
+  final _directorCtrl = TextEditingController();
+  final _genreCtrl = TextEditingController();
+  final _synopsisCtrl = TextEditingController();
+
+  void _addMovie() {
+    if (_titleCtrl.text.isEmpty) return;
+
+    setState(() {
+      movies.add(
+        Movie(
+          title: _titleCtrl.text,
+          year: _yearCtrl.text,
+          director: _directorCtrl.text,
+          genre: _genreCtrl.text,
+          synopsis: _synopsisCtrl.text,
+          imageUrl: '',
+        ),
+      );
+    });
+
+    _titleCtrl.clear();
+    _yearCtrl.clear();
+    _directorCtrl.clear();
+    _genreCtrl.clear();
+    _synopsisCtrl.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0f1115),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF151821),
+        title: const Text(
+          'Administración de catálogo',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: movies.length,
+              itemBuilder: (context, index) {
+                final movie = movies[index];
+                return Dismissible(
+                  key: ValueKey(movie.title + index.toString()),
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) {
+                    setState(() {
+                      movies.removeAt(index); // baja de la película
+                    });
+                  },
+                  child: ListTile(
+                    tileColor: const Color(0xFF181b24),
+                    title: Text(
+                      movie.title,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: Text(
+                      '${movie.year} • ${movie.genre}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding:
+            const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            decoration: const BoxDecoration(
+              color: Color(0xFF151821),
+            ),
+            child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    movie.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    movie.genre,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
-                  ),
+                  _AdminTextField(controller: _titleCtrl, label: 'Título'),
+                  _AdminTextField(controller: _yearCtrl, label: 'Año'),
+                  _AdminTextField(controller: _directorCtrl, label: 'Director'),
+                  _AdminTextField(controller: _genreCtrl, label: 'Género'),
+                  _AdminTextField(
+                      controller: _synopsisCtrl, label: 'Sinopsis'),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        movie.year,
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        movie.duration,
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _addMovie,
+                      child: const Text('Agregar película'),
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const _AdminTextField({required this.controller, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white70),
+          filled: true,
+          fillColor: const Color(0xFF181b24),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
     );
